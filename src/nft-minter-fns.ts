@@ -8,6 +8,9 @@ import {
   getAssignRolesTransaction,
   getMintTransaction,
   getGiveawayTransaction,
+  getDbzTransaction,
+  getMarvelTransaction,
+  getDofusTransaction,
   getSetDropTransaction,
   getUnsetDropTransaction,
   getPauseMintingTransaction,
@@ -29,6 +32,9 @@ import {
   getEnableAllowlistTransaction,
   getDisableAllowlistTransaction,
   getFileContents,
+  getSetSpecialTraitAmountTransaction,
+  getEnablePrivateSaleTransaction,
+  getDisablePrivateSaleTransaction,
 } from './utils';
 import {
   issueNftMinterGasLimit,
@@ -41,6 +47,9 @@ import {
   giveawayAddressLabel,
   giveawayTokensAmount,
   giveawayTxBaseGasLimit,
+  dbzTxBaseGasLimit,
+  marvelTxBaseGasLimit,
+  dofusTxBaseGasLimit,
   dropTokensAmountLabel,
   setUnsetDropTxGasLimit,
   pauseUnpauseTxGasLimit,
@@ -75,6 +84,11 @@ import {
   addressesListLabel,
   allowlistBatchSize,
   isDropActiveFunctionName,
+  setSpecialTraitAmountFunctionName,
+  deployNftMinterSpecialTraitsLabel,
+  enablePrivateSaleFunctionName,
+  disablePrivateSaleFunctionName,
+  getTokensLeftToMintListFunctionName,
 } from './config';
 import { exit } from 'process';
 
@@ -232,7 +246,7 @@ const giveaway = async () => {
         value && value > 0 && value <= 55
           ? true
           : 'Required a number greater than 0 and lower than 55 because of the max gas limits!',
-    },
+    }
   ];
 
   try {
@@ -256,6 +270,126 @@ const giveaway = async () => {
       giveawayTxBaseGasLimit,
       giveawayAddress,
       Number(giveawayTokensAmount)
+    );
+
+    await commonTxOperations(giveawayTx, userAccount, signer, provider);
+  } catch (e) {
+    console.log((e as Error)?.message);
+  }
+};
+
+const dbzmint = async () => {
+  const smartContractAddress = getTheSCAddressFromOutputOrConfig();
+
+  const promptQuestions: PromptObject[] = [
+    {
+      type: 'text',
+      name: 'giveawayAddress',
+      message: giveawayAddressLabel,
+      validate: (value) => (!value ? 'Required!' : true),
+    }
+  ]
+
+  try {
+    const { giveawayAddress } = await prompts(
+      promptQuestions
+    );
+
+    if (!giveawayAddress) {
+      console.log('You have to provide the give away address!');
+      exit(9);
+    }
+
+    await areYouSureAnswer();
+
+    const { smartContract, userAccount, signer, provider } = await setup(
+      smartContractAddress
+    );
+
+    const giveawayTx = getDbzTransaction(
+      smartContract,
+      dbzTxBaseGasLimit,
+      giveawayAddress
+    );
+
+    await commonTxOperations(giveawayTx, userAccount, signer, provider);
+  } catch (e) {
+    console.log((e as Error)?.message);
+  }
+};
+
+const marvelmint = async () => {
+  const smartContractAddress = getTheSCAddressFromOutputOrConfig();
+
+  const promptQuestions: PromptObject[] = [
+    {
+      type: 'text',
+      name: 'giveawayAddress',
+      message: giveawayAddressLabel,
+      validate: (value) => (!value ? 'Required!' : true),
+    }
+  ]
+
+  try {
+    const { giveawayAddress } = await prompts(
+      promptQuestions
+    );
+
+    if (!giveawayAddress) {
+      console.log('You have to provide the give away address!');
+      exit(9);
+    }
+
+    await areYouSureAnswer();
+
+    const { smartContract, userAccount, signer, provider } = await setup(
+      smartContractAddress
+    );
+
+    const giveawayTx = getMarvelTransaction(
+      smartContract,
+      marvelTxBaseGasLimit,
+      giveawayAddress
+    );
+
+    await commonTxOperations(giveawayTx, userAccount, signer, provider);
+  } catch (e) {
+    console.log((e as Error)?.message);
+  }
+};
+
+const dofusmint = async () => {
+  const smartContractAddress = getTheSCAddressFromOutputOrConfig();
+
+  const promptQuestions: PromptObject[] = [
+    {
+      type: 'text',
+      name: 'giveawayAddress',
+      message: giveawayAddressLabel,
+      validate: (value) => (!value ? 'Required!' : true),
+    }
+  ]
+
+  try {
+    const { giveawayAddress } = await prompts(
+      promptQuestions
+    );
+
+    if (!giveawayAddress) {
+      console.log('You have to provide the give away address!');
+      exit(9);
+    }
+
+    await areYouSureAnswer();
+
+    const { smartContract, userAccount, signer, provider } = await setup(
+      smartContractAddress
+    );
+
+    const giveawayTx = getDofusTransaction(
+      smartContract,
+      dofusTxBaseGasLimit,
+      giveawayAddress
     );
 
     await commonTxOperations(giveawayTx, userAccount, signer, provider);
@@ -389,6 +523,37 @@ const setNewPrice = async () => {
     await commonTxOperations(changePriceTx, userAccount, signer, provider);
 
     updateOutputFile({ sellingPrice: newPrice });
+  } catch (e) {
+    console.log((e as Error)?.message);
+  }
+};
+
+const setSpecialTraitAmount = async () => {
+  const promptQuestions: PromptObject[] = [
+    {
+      type: 'number',
+      name: 'specialTraitAmount',
+      message: deployNftMinterSpecialTraitsLabel
+    }
+  ]
+
+  const smartContractAddress = getTheSCAddressFromOutputOrConfig();
+  try {
+    const { specialTraitAmount } = await prompts(promptQuestions);
+    await areYouSureAnswer();
+
+    const { smartContract, userAccount, signer, provider } = await setup(
+      smartContractAddress
+    );
+
+    const changePriceTx = getSetSpecialTraitAmountTransaction(
+      smartContract,
+      setNewPriceGasLimit,
+      specialTraitAmount
+    );
+
+    await commonTxOperations(changePriceTx, userAccount, signer, provider);
+
   } catch (e) {
     console.log((e as Error)?.message);
   }
@@ -547,6 +712,46 @@ const disableAllowlist = async () => {
   }
 };
 
+const enablePrivateSale = async () => {
+  const smartContractAddress = getTheSCAddressFromOutputOrConfig();
+  try {
+    await areYouSureAnswer();
+
+    const { smartContract, userAccount, signer, provider } = await setup(
+      smartContractAddress
+    );
+
+    const enableAllowlistTx = getEnablePrivateSaleTransaction(
+      smartContract,
+      enableDisableAllowlistGasLimit
+    );
+
+    await commonTxOperations(enableAllowlistTx, userAccount, signer, provider);
+  } catch (e) {
+    console.log((e as Error)?.message);
+  }
+};
+
+const disablePrivateSale = async () => {
+  const smartContractAddress = getTheSCAddressFromOutputOrConfig();
+  try {
+    await areYouSureAnswer();
+
+    const { smartContract, userAccount, signer, provider } = await setup(
+      smartContractAddress
+    );
+
+    const disableAllowlistTx = getDisablePrivateSaleTransaction(
+      smartContract,
+      enableDisableAllowlistGasLimit
+    );
+
+    await commonTxOperations(disableAllowlistTx, userAccount, signer, provider);
+  } catch (e) {
+    console.log((e as Error)?.message);
+  }
+};
+
 const getMintedPerAddressTotal = async () => {
   const promptQuestions: PromptObject[] = [
     {
@@ -636,7 +841,7 @@ const populateIndexes = async () => {
       // on elrond side from time to time, should be adjusted each time
       Math.ceil(
         (populateIndexesBaseTxGasLimit * nftMinterAmount) / 18.5 +
-          populateIndexesBaseTxGasLimit
+        populateIndexesBaseTxGasLimit
       ),
       nftMinterAmount
     );
@@ -738,6 +943,9 @@ export const nftMinter = async (subcommand?: string) => {
     populateIndexes: 'populate-indexes',
     mint: 'mint',
     giveaway: 'giveaway',
+    mintDbzMiner: 'mint-dbz-miner',
+    mintMarvelMiner: 'mint-marvel-miner',
+    mintDofusMiner: 'mint-dofus-miner',
     claimScFunds: 'claim-sc-funds',
     setDrop: 'set-drop',
     unsetDrop: 'unset-drop',
@@ -751,7 +959,11 @@ export const nftMinter = async (subcommand?: string) => {
     disableAllowlist: 'disable-allowlist',
     changeBaseCids: 'change-base-cids',
     setNewTokensLimitPerAddress: 'set-new-tokens-limit-per-address',
+    setSpecialTraitAmount: 'set-special-trait-amount',
+    enablePrivateSale: 'enable-privatesale',
+    disablePrivateSale: 'disable-privatesale',
     getTotalTokensLeft: 'get-total-tokens-left',
+    getTokensLeftToMintList: 'get-tokens-left-to-mint-list',
     getProvenanceHash: 'get-provenance-hash',
     getDropTokensLeft: 'get-drop-tokens-left',
     getNftPrice: 'get-nft-price',
@@ -801,6 +1013,15 @@ export const nftMinter = async (subcommand?: string) => {
     case COMMANDS.giveaway:
       giveaway();
       break;
+    case COMMANDS.mintDbzMiner:
+      dbzmint();
+      break;
+    case COMMANDS.mintMarvelMiner:
+      marvelmint();
+      break;
+    case COMMANDS.mintDofusMiner:
+      dofusmint();
+      break;
     case COMMANDS.setDrop:
       setDrop();
       break;
@@ -815,6 +1036,9 @@ export const nftMinter = async (subcommand?: string) => {
       break;
     case COMMANDS.setNewPrice:
       setNewPrice();
+      break;
+    case COMMANDS.setSpecialTraitAmount:
+      setSpecialTraitAmount();
       break;
     case COMMANDS.claimDevRewards:
       claimDevRewards();
@@ -831,6 +1055,12 @@ export const nftMinter = async (subcommand?: string) => {
     case COMMANDS.disableAllowlist:
       disableAllowlist();
       break;
+    case COMMANDS.enablePrivateSale:
+      enablePrivateSale();
+      break;
+    case COMMANDS.disablePrivateSale:
+      disablePrivateSale();
+      break;
     case COMMANDS.changeBaseCids:
       changeBaseCids();
       break;
@@ -839,6 +1069,13 @@ export const nftMinter = async (subcommand?: string) => {
       break;
     case COMMANDS.claimScFunds:
       claimScFunds();
+      break;
+    case COMMANDS.getTokensLeftToMintList:
+      commonScQuery({
+        functionName: getTokensLeftToMintListFunctionName,
+        resultLabel: 'Tokens left to mint list:',
+        resultType: 'number',
+      });
       break;
     case COMMANDS.getTotalTokensLeft:
       commonScQuery({
@@ -934,3 +1171,4 @@ export const nftMinter = async (subcommand?: string) => {
       break;
   }
 };
+
